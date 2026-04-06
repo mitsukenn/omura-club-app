@@ -511,7 +511,7 @@ body{font-family:'Noto Sans JP',sans-serif;width:1100px;padding:35px 50px;backgr
 .report-header-info{margin-bottom:20px;margin-left:auto;margin-right:60px;width:520px;}
 .report-header-row{margin-bottom:4px;font-size:14px;display:flex;align-items:center;}
 .report-header-label{white-space:nowrap;}
-.report-header-value{border-bottom:1px solid #000;padding-left:10px;padding-bottom:2px;flex:1;}
+.report-header-value{border-bottom:1px solid #000;padding-bottom:2px;flex:1;text-align:center;}
 .report-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;table-layout:fixed;}
 .report-table th,.report-table td{border:1px solid #000;padding:8px 6px;text-align:center;overflow:hidden;}
 .report-table th{font-weight:500;font-size:12px;}
