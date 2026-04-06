@@ -579,14 +579,16 @@ body {
     min-width: 80px;
 }
 
+.report-table .col-date { width: 110px; }
+.report-table .col-start, .report-table .col-end { width: 60px; }
+.report-table .col-tilde-w { width: 25px; }
+.report-table .col-dur { width: 50px; }
+.report-table .col-loc { width: 160px; }
+
 .report-table .col-tilde {
     border-left: none;
     border-right: none;
     padding: 6px 2px;
-}
-
-.report-table .col-duration {
-    min-width: 45px;
 }
 
 .report-footer-info {

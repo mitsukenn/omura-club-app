@@ -430,23 +430,32 @@ function generateReport() {
             </div>
         </div>
         <table class="report-table">
+            <colgroup>
+                <col class="col-date">
+                <col class="col-start">
+                <col class="col-tilde-w">
+                <col class="col-end">
+                <col class="col-dur">
+                <col class="col-loc">
+                <col class="col-rep">
+            </colgroup>
             <thead>
                 <tr>
-                    <th rowspan="2" class="col-date">指導日</th>
-                    <th colspan="3" class="col-time-group">指導時間（２４時間表記）</th>
-                    <th rowspan="2" class="col-location">活動場所</th>
-                    <th rowspan="2" class="col-report">活動報告</th>
+                    <th>指導日</th>
+                    <th colspan="4">指導時間（２４時間表記）</th>
+                    <th>活動場所</th>
+                    <th>活動報告</th>
                 </tr>
             </thead>
             <tbody>
                 ${rows.map(r => {
-                    if (!r) return `<tr><td></td><td></td><td class="col-tilde">～</td><td></td><td class="col-duration">0:00</td><td></td><td></td></tr>`;
+                    if (!r) return `<tr><td></td><td></td><td class="col-tilde">～</td><td></td><td>0:00</td><td></td><td></td></tr>`;
                     return `<tr>
                         <td>${escapeHtml(r.date)}</td>
                         <td>${r.startTime}</td>
                         <td class="col-tilde">～</td>
                         <td>${r.endTime}</td>
-                        <td class="col-duration">${r.durationHM}</td>
+                        <td>${r.durationHM}</td>
                         <td class="text-left">${escapeHtml(r.location)}</td>
                         <td class="text-left">${escapeHtml(r.report)}</td>
                     </tr>`;
@@ -476,84 +485,128 @@ function generateReport() {
     document.getElementById('report-preview').scrollIntoView({ behavior: 'smooth' });
 }
 
-// --- PDF出力 ---
-function exportPDF() {
+// --- PDF出力・共有 ---
+function getReportFileName() {
     const monthInput = document.getElementById('report-month').value;
     const instructor = document.getElementById('report-instructor').value;
     const settings = getClubSettings();
     const [year, month] = monthInput.split('-').map(Number);
     const reiwa = year - 2018;
+    const clubName = (settings.clubName || 'クラブ').replace(/\s/g, '');
+    const instructorName = instructor.replace(/\s/g, '');
+    return `指導実績報告書_${clubName}_R${reiwa}年${month}月分_${instructorName}.pdf`;
+}
 
+function buildReportHTML() {
+    const src = document.getElementById('report-content').innerHTML;
+    return `<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP',sans-serif;width:1050px;padding:30px 40px;background:#fff;color:#000;font-size:13px;}
+.report-title-row{margin-bottom:14px;}
+.report-title{font-size:17px;font-weight:700;}
+.report-note{font-size:12px;margin-left:16px;}
+.report-header-info{margin-bottom:18px;margin-left:380px;}
+.report-header-row{margin-bottom:3px;font-size:13px;display:flex;align-items:center;}
+.report-header-label{white-space:nowrap;}
+.report-header-value{border-bottom:1px solid #000;padding-left:8px;padding-bottom:1px;flex:1;}
+.report-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;table-layout:fixed;}
+.report-table th,.report-table td{border:1px solid #000;padding:6px 8px;text-align:center;word-break:break-all;}
+.report-table th{font-weight:500;font-size:11px;}
+.report-table .col-date{width:110px;}
+.report-table .col-start,.report-table .col-end{width:60px;}
+.report-table .col-tilde-w{width:25px;}
+.report-table .col-dur{width:50px;}
+.report-table .col-loc{width:170px;}
+.col-tilde{border-left:none!important;border-right:none!important;}
+.text-left{text-align:left!important;}
+.report-footer-info{margin-left:280px;margin-top:16px;}
+.report-footer-row{display:flex;align-items:baseline;margin-bottom:5px;font-size:13px;}
+.footer-label{min-width:260px;}
+.footer-value{text-align:right;min-width:70px;}
+.footer-unit{margin-left:8px;}
+</style></head><body>${src}</body></html>`;
+}
+
+function exportPDF() {
     showToast('PDF生成中...');
 
-    // PDF用の非表示レンダリング領域を作成（A4横サイズ相当）
-    const container = document.createElement('div');
-    container.id = 'pdf-render-area';
-    container.style.cssText = `
-        position: fixed; left: -9999px; top: 0;
-        width: 1120px; padding: 40px 50px;
-        background: #fff; font-family: 'Noto Sans JP', sans-serif;
-        font-size: 14px; color: #000;
-    `;
-    container.innerHTML = `
-        <style>
-            #pdf-render-area .report-title-row { margin-bottom: 16px; }
-            #pdf-render-area .report-title { font-size: 18px; font-weight: 700; }
-            #pdf-render-area .report-note { font-size: 14px; margin-left: 20px; }
-            #pdf-render-area .report-header-info { margin-bottom: 20px; padding-left: 40%; }
-            #pdf-render-area .report-header-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 15px; }
-            #pdf-render-area .report-header-label { white-space: nowrap; }
-            #pdf-render-area .report-header-value { flex: 1; border-bottom: 1px solid #000; padding-left: 10px; padding-bottom: 2px; min-width: 200px; }
-            #pdf-render-area .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 24px; }
-            #pdf-render-area .report-table th,
-            #pdf-render-area .report-table td { border: 1px solid #000; padding: 7px 10px; text-align: center; }
-            #pdf-render-area .report-table th { font-weight: 500; font-size: 13px; }
-            #pdf-render-area .report-table td.text-left { text-align: left; }
-            #pdf-render-area .report-table .col-tilde { border-left: none; border-right: none; padding: 7px 3px; }
-            #pdf-render-area .report-table .col-duration { min-width: 55px; }
-            #pdf-render-area .report-footer-info { margin-top: 20px; padding-left: 30%; }
-            #pdf-render-area .report-footer-row { display: flex; align-items: baseline; margin-bottom: 6px; font-size: 15px; }
-            #pdf-render-area .footer-label { min-width: 300px; }
-            #pdf-render-area .footer-value { text-align: right; min-width: 90px; }
-            #pdf-render-area .footer-unit { margin-left: 10px; min-width: 35px; }
-        </style>
-        ${document.getElementById('report-content').innerHTML}
-    `;
-    document.body.appendChild(container);
+    // iframeでレンダリング（ページスタイルの干渉を完全に排除）
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1050px;height:800px;border:none;';
+    document.body.appendChild(iframe);
 
-    // html2canvas → jsPDF
+    const htmlContent = buildReportHTML();
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(htmlContent);
+    iframe.contentDocument.close();
+
     setTimeout(() => {
-        html2canvas(container, {
+        html2canvas(iframe.contentDocument.body, {
             scale: 2,
             useCORS: true,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            width: 1050,
+            windowWidth: 1050
         }).then(canvas => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
             const pageWidth = 297;
-            const pageHeight = 210;
-            const margin = 10;
+            const margin = 12;
             const contentWidth = pageWidth - margin * 2;
             const contentHeight = (canvas.height * contentWidth) / canvas.width;
 
             const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', margin, margin, contentWidth, contentHeight);
+            doc.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 186));
 
-            // ファイル名生成
-            const clubName = (settings.clubName || 'クラブ').replace(/\s/g, '');
-            const instructorName = instructor.replace(/\s/g, '');
-            const fileName = `指導実績報告書_${clubName}_R${reiwa}年${month}月分_${instructorName}.pdf`;
+            const fileName = getReportFileName();
+
+            // Web Share API対応（スマホ向け）
+            if (navigator.share && navigator.canShare) {
+                const pdfBlob = doc.output('blob');
+                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                if (navigator.canShare({ files: [file] })) {
+                    // 共有可能 → 共有シートを表示
+                    lastGeneratedPdf = { blob: pdfBlob, fileName: fileName };
+                    document.getElementById('btn-share-pdf').style.display = 'flex';
+                }
+            }
 
             doc.save(fileName);
-            document.body.removeChild(container);
+            document.body.removeChild(iframe);
             showToast('PDFをダウンロードしました');
         }).catch(err => {
             console.error('PDF生成エラー:', err);
-            document.body.removeChild(container);
+            document.body.removeChild(iframe);
             showToast('PDF生成に失敗しました');
         });
-    }, 200);
+    }, 500);
+}
+
+// 共有用のPDFデータを保持
+let lastGeneratedPdf = null;
+
+function sharePDF() {
+    if (!lastGeneratedPdf) {
+        showToast('先にPDFを生成してください');
+        return;
+    }
+    const file = new File([lastGeneratedPdf.blob], lastGeneratedPdf.fileName, { type: 'application/pdf' });
+    navigator.share({
+        title: '指導実績報告書',
+        text: '指導実績報告書を送付します。',
+        files: [file]
+    }).then(() => {
+        showToast('共有しました');
+    }).catch(err => {
+        if (err.name !== 'AbortError') {
+            console.error('共有エラー:', err);
+            showToast('共有に失敗しました');
+        }
+    });
 }
 
 // --- 設定 ---
