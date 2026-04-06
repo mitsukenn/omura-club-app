@@ -508,8 +508,8 @@ body{font-family:'Noto Sans JP',sans-serif;width:1100px;padding:35px 50px;backgr
 .report-title-row{margin-bottom:16px;}
 .report-title{font-size:18px;font-weight:700;}
 .report-note{font-size:13px;margin-left:24px;}
-.report-header-info{margin-bottom:20px;margin-left:360px;}
-.report-header-row{margin-bottom:4px;font-size:14px;display:flex;align-items:center;}
+.report-header-info{margin-bottom:20px;display:flex;flex-direction:column;align-items:center;}
+.report-header-row{margin-bottom:4px;font-size:14px;display:flex;align-items:center;width:480px;}
 .report-header-label{white-space:nowrap;}
 .report-header-value{border-bottom:1px solid #000;padding-left:10px;padding-bottom:2px;flex:1;}
 .report-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;table-layout:fixed;}
@@ -524,11 +524,11 @@ body{font-family:'Noto Sans JP',sans-serif;width:1100px;padding:35px 50px;backgr
 .report-table .col-rep{width:43%;}
 .col-tilde{border-left:none!important;border-right:none!important;}
 .text-left{text-align:left!important;padding-left:10px!important;}
-.report-footer-info{margin-left:280px;margin-top:20px;}
-.report-footer-row{display:flex;align-items:baseline;margin-bottom:6px;font-size:14px;}
-.footer-label{min-width:280px;}
+.report-footer-info{display:flex;flex-direction:column;align-items:center;margin-top:20px;}
+.report-footer-row{display:flex;align-items:baseline;margin-bottom:6px;font-size:14px;width:480px;}
+.footer-label{flex:1;}
 .footer-value{text-align:right;min-width:80px;}
-.footer-unit{margin-left:10px;}
+.footer-unit{text-align:left;min-width:40px;margin-left:8px;}
 </style></head><body>${src}</body></html>`;
 }
 
