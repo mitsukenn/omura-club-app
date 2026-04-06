@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大村市育成会クラブ 指導記録管理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="app-header">
+        <h1>大村市育成会クラブ</h1>
+        <p class="header-sub">指導記録管理</p>
+    </header>
+
+    <!-- ログイン画面 -->
+    <div id="screen-login" class="screen active">
+        <div class="card login-card">
+            <h2>ログイン</h2>
+            <div class="form-group">
+                <label for="login-club">クラブ名</label>
+                <select id="login-club">
+                    <option value="">選択してください</option>
+                    <option value="OMURA-BASEBALL">大村中 野球クラブ</option>
+                    <option value="OMURA-SOCCER">大村中 サッカークラブ</option>
+                    <option value="KUSHI-BASEBALL">玖島中 野球クラブ</option>
+                    <option value="KUSHI-TENNIS">玖島中 テニスクラブ</option>
+                    <option value="NISHI-BASKETBALL">西大村中 バスケットボールクラブ</option>
+                    <option value="GUN-VOLLEYBALL">郡中 バレーボールクラブ</option>
+                    <option value="SAKURA-SOCCER">桜が原中 サッカークラブ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="login-name">氏名</label>
+                <input type="text" id="login-name" placeholder="例：田中 一郎">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="doLogin()">ログイン</button>
+        </div>
+    </div>
+
+    <!-- メイン画面（タブ切り替え） -->
+    <div id="screen-main" class="screen">
+        <!-- タブナビゲーション -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="records" onclick="switchTab('records')">活動記録</button>
+            <button class="tab-btn" data-tab="report" onclick="switchTab('report')">報告書出力</button>
+            <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">設定</button>
+        </nav>
+
+        <!-- 活動記録タブ -->
+        <div id="tab-records" class="tab-content active">
+            <!-- 月選択 -->
+            <div class="month-selector">
+                <button class="btn btn-icon" onclick="changeMonth(-1)">&lt;</button>
+                <span id="current-month-label"></span>
+                <button class="btn btn-icon" onclick="changeMonth(1)">&gt;</button>
+            </div>
+
+            <!-- サマリー -->
+            <div class="summary-card">
+                <div class="summary-item">
+                    <span class="summary-label">活動回数</span>
+                    <span class="summary-value" id="summary-count">0回</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">累計時間</span>
+                    <span class="summary-value" id="summary-hours">0.0時間</span>
+                </div>
+            </div>
+
+            <!-- 記録一覧 -->
+            <div id="records-list" class="records-list">
+                <!-- 動的に生成 -->
+            </div>
+
+            <!-- 新規追加ボタン -->
+            <button class="btn btn-primary btn-fab" onclick="showInputForm()">＋ 活動を記録する</button>
+        </div>
+
+        <!-- 報告書出力タブ -->
+        <div id="tab-report" class="tab-content">
+            <div class="report-controls">
+                <div class="form-group">
+                    <label for="report-month">対象月</label>
+                    <input type="month" id="report-month">
+                </div>
+                <div class="form-group">
+                    <label for="report-instructor">指導者</label>
+                    <select id="report-instructor"></select>
+                </div>
+                <div class="form-group">
+                    <label for="report-rate">時間単価（円）</label>
+                    <input type="number" id="report-rate" value="1000" min="0" step="100">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="generateReport()">報告書を表示</button>
+            </div>
+
+            <!-- 報告書プレビュー -->
+            <div id="report-preview" class="report-preview" style="display:none;">
+                <div id="report-content" class="report-sheet"></div>
+                <div class="report-actions">
+                    <button class="btn btn-primary btn-block" onclick="exportPDF()">PDFで保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設定タブ -->
+        <div id="tab-settings" class="tab-content">
+            <div class="card">
+                <h3>クラブ情報</h3>
+                <div class="form-group">
+                    <label for="setting-club-name">クラブ名</label>
+                    <input type="text" id="setting-club-name">
+                </div>
+                <div class="form-group">
+                    <label for="setting-representative">代表者氏名</label>
+                    <input type="text" id="setting-representative">
+                </div>
+            </div>
+            <div class="card">
+                <h3>指導者情報</h3>
+                <div id="instructor-list"></div>
+                <button class="btn btn-secondary" onclick="addInstructor()">＋ 指導者を追加</button>
+            </div>
+            <div class="card">
+                <button class="btn btn-secondary btn-block" onclick="loadSampleData()">サンプルデータを読み込む</button>
+                <button class="btn btn-danger btn-block" onclick="resetData()" style="margin-top:8px;">データをリセット</button>
+            </div>
+            <div class="card">
+                <button class="btn btn-secondary btn-block" onclick="doLogout()">ログアウト</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 入力フォームモーダル -->
+    <div id="modal-input" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="input-modal-title">活動記録</h3>
+                <button class="btn-close" onclick="closeInputForm()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="input-date">指導日</label>
+                    <input type="date" id="input-date">
+                </div>
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label for="input-start">開始時間</label>
+                        <input type="time" id="input-start" value="09:00" step="1800">
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="input-end">終了時間</label>
+                        <input type="time" id="input-end" value="12:00" step="1800">
+                    </div>
+                </div>
+                <div class="time-display" id="time-display">指導時間: 3.0時間</div>
+                <div class="form-group">
+                    <label for="input-location">活動場所</label>
+                    <input type="text" id="input-location" placeholder="例：○○中学校グラウンド" list="location-suggestions">
+                    <datalist id="location-suggestions"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="input-report">活動報告</label>
+                    <textarea id="input-report" rows="3" placeholder="例：基本練習、試合形式練習"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="input-instructor">記録者</label>
+                    <select id="input-instructor"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-block" onclick="saveRecord()">保存する</button>
+                <button class="btn btn-danger btn-block" id="btn-delete-record" style="display:none;margin-top:8px;" onclick="deleteRecord()">この記録を削除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト -->
+    <div id="toast" class="toast"></div>
+
+    <!-- フッター -->
+    <footer class="app-footer">
+        <p>制作: まちのAI屋さん</p>
+    </footer>
+
+    <!-- jsPDF (PDF出力用) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
