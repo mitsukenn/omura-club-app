@@ -103,10 +103,13 @@ body {
 .tab-nav {
     display: flex;
     background: var(--color-white);
-    border-radius: var(--radius);
+    border-radius: 0 0 var(--radius) var(--radius);
     box-shadow: var(--shadow);
     margin-bottom: 16px;
     overflow: hidden;
+    position: sticky;
+    top: 58px;
+    z-index: 90;
 }
 
 .tab-btn {
@@ -498,9 +501,6 @@ body {
     box-shadow: var(--shadow);
     padding: 20px;
     margin-bottom: 16px;
-    position: sticky;
-    top: 58px;
-    z-index: 50;
 }
 
 .report-preview {
