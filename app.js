@@ -487,7 +487,9 @@ function generateReport() {
 
     document.getElementById('report-preview').style.display = 'block';
     document.getElementById('report-preview').scrollIntoView({ behavior: 'smooth' });
-    setupShareButton();
+    // PDF作成状態をリセット
+    createdPdfDoc = null;
+    document.getElementById('pdf-action-buttons').style.display = 'none';
 }
 
 // --- PDF出力・共有 ---
@@ -537,61 +539,12 @@ body{font-family:'Noto Sans JP',sans-serif;width:1100px;padding:35px 50px;backgr
 </style></head><body>${src}</body></html>`;
 }
 
-function exportPDF() {
-    showToast('PDF生成中...');
+// 作成済みPDFを保持
+let createdPdfDoc = null;
+let createdPdfFileName = '';
 
-    // iframeでレンダリング（ページスタイルの干渉を完全に排除）
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;height:800px;border:none;';
-    document.body.appendChild(iframe);
-
-    const htmlContent = buildReportHTML();
-    iframe.contentDocument.open();
-    iframe.contentDocument.write(htmlContent);
-    iframe.contentDocument.close();
-
-    setTimeout(() => {
-        html2canvas(iframe.contentDocument.body, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            width: 1100,
-            windowWidth: 1100
-        }).then(canvas => {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-            const pageWidth = 297;
-            const margin = 12;
-            const contentWidth = pageWidth - margin * 2;
-            const contentHeight = (canvas.height * contentWidth) / canvas.width;
-
-            const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 186));
-
-            const fileName = getReportFileName();
-            doc.save(fileName);
-            document.body.removeChild(iframe);
-            showToast('PDFをダウンロードしました');
-        }).catch(err => {
-            console.error('PDF生成エラー:', err);
-            document.body.removeChild(iframe);
-            showToast('PDF生成に失敗しました');
-        });
-    }, 500);
-}
-
-// スマホ判定＆共有ボタン表示
-function setupShareButton() {
-    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-    if (isMobile && navigator.share) {
-        document.getElementById('btn-share-pdf').style.display = 'flex';
-        document.getElementById('btn-export-pdf').style.display = 'none';
-    }
-}
-
-function shareReportPDF() {
-    showToast('PDF生成中...');
+function createPDF() {
+    showToast('PDF作成中...');
 
     const iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;height:800px;border:none;';
@@ -608,39 +561,54 @@ function shareReportPDF() {
             width: 1100, windowWidth: 1100
         }).then(canvas => {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            createdPdfDoc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             const pageWidth = 297;
             const margin = 12;
             const contentWidth = pageWidth - margin * 2;
             const contentHeight = (canvas.height * contentWidth) / canvas.width;
             const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 186));
-
-            const fileName = getReportFileName();
-            const pdfBlob = doc.output('blob');
-            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            createdPdfDoc.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 186));
+            createdPdfFileName = getReportFileName();
 
             document.body.removeChild(iframe);
 
-            navigator.share({
-                title: '指導実績報告書',
-                text: '指導実績報告書を送付します。',
-                files: [file]
-            }).then(() => {
-                showToast('共有しました');
-            }).catch(err => {
-                if (err.name !== 'AbortError') {
-                    // 共有キャンセル時はフォールバックでダウンロード
-                    doc.save(fileName);
-                    showToast('PDFをダウンロードしました');
-                }
-            });
+            // アクションボタンを表示
+            document.getElementById('pdf-action-buttons').style.display = 'block';
+            // スマホなら共有ボタンも表示
+            const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+            if (isMobile && navigator.share) {
+                document.getElementById('btn-share-pdf').style.display = 'flex';
+            }
+            showToast('PDF作成完了！');
         }).catch(err => {
             console.error('PDF生成エラー:', err);
             document.body.removeChild(iframe);
-            showToast('PDF生成に失敗しました');
+            showToast('PDF作成に失敗しました');
         });
     }, 500);
+}
+
+function downloadPDF() {
+    if (!createdPdfDoc) { showToast('先にPDFを作成してください'); return; }
+    createdPdfDoc.save(createdPdfFileName);
+    showToast('PDFをダウンロードしました');
+}
+
+function shareCreatedPDF() {
+    if (!createdPdfDoc) { showToast('先にPDFを作成してください'); return; }
+    const pdfBlob = createdPdfDoc.output('blob');
+    const file = new File([pdfBlob], createdPdfFileName, { type: 'application/pdf' });
+    navigator.share({
+        title: '指導実績報告書',
+        text: '指導実績報告書を送付します。',
+        files: [file]
+    }).then(() => {
+        showToast('共有しました');
+    }).catch(err => {
+        if (err.name !== 'AbortError') {
+            showToast('共有がキャンセルされました');
+        }
+    });
 }
 
 // --- 設定 ---
