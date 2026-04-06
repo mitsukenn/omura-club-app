@@ -530,9 +530,8 @@ body {
 
 .report-header-info {
     margin-bottom: 16px;
-    margin-left: auto;
+    margin-left: 35%;
     margin-right: 10px;
-    width: 75%;
 }
 
 .report-header-row {
@@ -551,8 +550,7 @@ body {
     border-bottom: 1px solid #333;
     padding-bottom: 2px;
     min-width: 120px;
-    text-align: right;
-    padding-right: 10px;
+    text-align: center;
 }
 
 .report-table {
