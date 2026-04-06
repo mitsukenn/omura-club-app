@@ -498,6 +498,9 @@ body {
     box-shadow: var(--shadow);
     padding: 20px;
     margin-bottom: 16px;
+    position: sticky;
+    top: 58px;
+    z-index: 50;
 }
 
 .report-preview {
