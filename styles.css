@@ -579,11 +579,13 @@ body {
     min-width: 80px;
 }
 
-.report-table .col-date { width: 110px; }
-.report-table .col-start, .report-table .col-end { width: 60px; }
-.report-table .col-tilde-w { width: 25px; }
-.report-table .col-dur { width: 50px; }
-.report-table .col-loc { width: 160px; }
+.report-table .col-date { width: 12%; }
+.report-table .col-start { width: 7%; }
+.report-table .col-tilde-w { width: 3%; }
+.report-table .col-end { width: 7%; }
+.report-table .col-dur { width: 6%; }
+.report-table .col-loc { width: 22%; }
+.report-table .col-rep { width: 43%; }
 
 .report-table .col-tilde {
     border-left: none;

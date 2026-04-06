@@ -504,29 +504,31 @@ function buildReportHTML() {
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Noto Sans JP',sans-serif;width:1050px;padding:30px 40px;background:#fff;color:#000;font-size:13px;}
-.report-title-row{margin-bottom:14px;}
-.report-title{font-size:17px;font-weight:700;}
-.report-note{font-size:12px;margin-left:16px;}
-.report-header-info{margin-bottom:18px;margin-left:380px;}
-.report-header-row{margin-bottom:3px;font-size:13px;display:flex;align-items:center;}
+body{font-family:'Noto Sans JP',sans-serif;width:1100px;padding:35px 50px;background:#fff;color:#000;font-size:13px;}
+.report-title-row{margin-bottom:16px;}
+.report-title{font-size:18px;font-weight:700;}
+.report-note{font-size:13px;margin-left:24px;}
+.report-header-info{margin-bottom:20px;margin-left:360px;}
+.report-header-row{margin-bottom:4px;font-size:14px;display:flex;align-items:center;}
 .report-header-label{white-space:nowrap;}
-.report-header-value{border-bottom:1px solid #000;padding-left:8px;padding-bottom:1px;flex:1;}
-.report-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;table-layout:fixed;}
-.report-table th,.report-table td{border:1px solid #000;padding:6px 8px;text-align:center;word-break:break-all;}
-.report-table th{font-weight:500;font-size:11px;}
-.report-table .col-date{width:110px;}
-.report-table .col-start,.report-table .col-end{width:60px;}
-.report-table .col-tilde-w{width:25px;}
-.report-table .col-dur{width:50px;}
-.report-table .col-loc{width:170px;}
+.report-header-value{border-bottom:1px solid #000;padding-left:10px;padding-bottom:2px;flex:1;}
+.report-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;table-layout:fixed;}
+.report-table th,.report-table td{border:1px solid #000;padding:8px 6px;text-align:center;overflow:hidden;}
+.report-table th{font-weight:500;font-size:12px;}
+.report-table .col-date{width:12%;}
+.report-table .col-start{width:7%;}
+.report-table .col-tilde-w{width:3%;}
+.report-table .col-end{width:7%;}
+.report-table .col-dur{width:6%;}
+.report-table .col-loc{width:22%;}
+.report-table .col-rep{width:43%;}
 .col-tilde{border-left:none!important;border-right:none!important;}
-.text-left{text-align:left!important;}
-.report-footer-info{margin-left:280px;margin-top:16px;}
-.report-footer-row{display:flex;align-items:baseline;margin-bottom:5px;font-size:13px;}
-.footer-label{min-width:260px;}
-.footer-value{text-align:right;min-width:70px;}
-.footer-unit{margin-left:8px;}
+.text-left{text-align:left!important;padding-left:10px!important;}
+.report-footer-info{margin-left:280px;margin-top:20px;}
+.report-footer-row{display:flex;align-items:baseline;margin-bottom:6px;font-size:14px;}
+.footer-label{min-width:280px;}
+.footer-value{text-align:right;min-width:80px;}
+.footer-unit{margin-left:10px;}
 </style></head><body>${src}</body></html>`;
 }
 
@@ -535,7 +537,7 @@ function exportPDF() {
 
     // iframeでレンダリング（ページスタイルの干渉を完全に排除）
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1050px;height:800px;border:none;';
+    iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;height:800px;border:none;';
     document.body.appendChild(iframe);
 
     const htmlContent = buildReportHTML();
@@ -548,8 +550,8 @@ function exportPDF() {
             scale: 2,
             useCORS: true,
             backgroundColor: '#ffffff',
-            width: 1050,
-            windowWidth: 1050
+            width: 1100,
+            windowWidth: 1100
         }).then(canvas => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
