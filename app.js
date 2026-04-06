@@ -391,12 +391,13 @@ function generateReport() {
             const r = filtered[i];
             const capped = Math.min(r.duration, 3.0);
             totalCapped += capped;
+            const d = new Date(r.date);
+            const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
             rows.push({
-                date: formatDateJP(r.date),
+                date: `${d.getMonth() + 1}月${d.getDate()}日（${dayNames[d.getDay()]}）`,
                 startTime: r.startTime,
                 endTime: r.endTime,
-                duration: r.duration.toFixed(1),
-                capped: capped.toFixed(1),
+                durationHM: formatHoursToHM(capped),
                 location: r.location,
                 report: r.report
             });
@@ -407,44 +408,45 @@ function generateReport() {
 
     const payAmount = totalCapped * rate;
 
-    // HTML生成
+    // HTML生成（大村市様式に準拠）
     const content = document.getElementById('report-content');
     content.innerHTML = `
-        <div class="report-title">地域クラブ指導実績報告書（令和${reiwa}年${month}月分）</div>
-        <div class="report-note">（休日分のみ記入してください。）</div>
+        <div class="report-title-row">
+            <span class="report-title">地域クラブ指導実績報告書（令和${reiwa}年${month}月分）</span>
+            <span class="report-note">（休日分のみ記入してください。）</span>
+        </div>
         <div class="report-header-info">
-            <p>地域クラブ名：${escapeHtml(settings.clubName || '（未設定）')}</p>
-            <p>代表者氏名：${escapeHtml(settings.representative || '（未設定）')}</p>
-            <p>指導者氏名：${escapeHtml(instructor)}</p>
+            <div class="report-header-row">
+                <span class="report-header-label">地域クラブ名：</span>
+                <span class="report-header-value">${escapeHtml(settings.clubName || '（未設定）')}</span>
+            </div>
+            <div class="report-header-row">
+                <span class="report-header-label">代表者氏名：</span>
+                <span class="report-header-value">${escapeHtml(settings.representative || '（未設定）')}</span>
+            </div>
+            <div class="report-header-row">
+                <span class="report-header-label">指導者氏名：</span>
+                <span class="report-header-value">${escapeHtml(instructor)}</span>
+            </div>
         </div>
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>指導日</th>
-                    <th colspan="3">指導時間(24時間表記)</th>
-                    <th>小数点<br>表記</th>
-                    <th>活動場所</th>
-                    <th>活動報告</th>
-                </tr>
-                <tr>
-                    <th></th>
-                    <th>開始</th>
-                    <th></th>
-                    <th>終了</th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
+                    <th rowspan="2" class="col-date">指導日</th>
+                    <th colspan="3" class="col-time-group">指導時間（２４時間表記）</th>
+                    <th rowspan="2" class="col-location">活動場所</th>
+                    <th rowspan="2" class="col-report">活動報告</th>
                 </tr>
             </thead>
             <tbody>
                 ${rows.map(r => {
-                    if (!r) return `<tr><td>&nbsp;</td><td></td><td>〜</td><td></td><td></td><td></td><td></td></tr>`;
+                    if (!r) return `<tr><td></td><td></td><td class="col-tilde">～</td><td></td><td class="col-duration">0:00</td><td></td><td></td></tr>`;
                     return `<tr>
                         <td>${escapeHtml(r.date)}</td>
                         <td>${r.startTime}</td>
-                        <td>〜</td>
+                        <td class="col-tilde">～</td>
                         <td>${r.endTime}</td>
-                        <td>${r.capped}</td>
+                        <td class="col-duration">${r.durationHM}</td>
                         <td class="text-left">${escapeHtml(r.location)}</td>
                         <td class="text-left">${escapeHtml(r.report)}</td>
                     </tr>`;
@@ -452,20 +454,21 @@ function generateReport() {
             </tbody>
         </table>
         <div class="report-footer-info">
-            <table>
-                <tr>
-                    <td class="label-cell">指導時間計（1日3時間上限）</td>
-                    <td class="value-cell">${totalCapped.toFixed(1)} 時間</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">時間単価</td>
-                    <td class="value-cell">${rate.toLocaleString()} 円</td>
-                </tr>
-                <tr>
-                    <td class="label-cell">指導報酬支給額</td>
-                    <td class="value-cell">${payAmount.toLocaleString()} 円</td>
-                </tr>
-            </table>
+            <div class="report-footer-row">
+                <span class="footer-label">指導時間計（１日３時間上限）</span>
+                <span class="footer-value">${totalCapped.toFixed(2)}</span>
+                <span class="footer-unit">時間</span>
+            </div>
+            <div class="report-footer-row">
+                <span class="footer-label">時間単価</span>
+                <span class="footer-value">${rate ? rate.toLocaleString() : ''}</span>
+                <span class="footer-unit">円</span>
+            </div>
+            <div class="report-footer-row">
+                <span class="footer-label">指導報酬支給額</span>
+                <span class="footer-value">${payAmount ? payAmount.toLocaleString() : '0'}</span>
+                <span class="footer-unit">円</span>
+            </div>
         </div>
     `;
 
@@ -529,13 +532,6 @@ function exportPDF() {
 }
 
 function generatePdfFromHtml(doc, data) {
-    // report-contentのHTMLをcanvasに変換してPDFに貼り付ける方式の代わりに、
-    // 印刷用のウィンドウを使ったPDF出力を実装
-
-    const monthInput = document.getElementById('report-month').value;
-    const instructor = document.getElementById('report-instructor').value;
-    const settings = getClubSettings();
-
     const printContent = document.getElementById('report-content').innerHTML;
 
     const printWindow = window.open('', '_blank');
@@ -550,69 +546,14 @@ function generatePdfFromHtml(doc, data) {
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body {
                     font-family: 'Noto Sans JP', sans-serif;
-                    padding: 20mm;
+                    padding: 15mm 20mm;
                     font-size: 12px;
                     color: #000;
                 }
-                .report-title {
-                    text-align: center;
-                    font-size: 16px;
-                    font-weight: 700;
-                    margin-bottom: 4px;
-                }
-                .report-note {
-                    text-align: center;
-                    font-size: 10px;
-                    color: #666;
-                    margin-bottom: 16px;
-                }
-                .report-header-info {
-                    margin-bottom: 16px;
-                }
-                .report-header-info p {
-                    font-size: 13px;
-                    margin-bottom: 4px;
-                }
-                .report-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 11px;
-                    margin-bottom: 16px;
-                }
-                .report-table th,
-                .report-table td {
-                    border: 1px solid #333;
-                    padding: 5px 6px;
-                    text-align: center;
-                }
-                .report-table th {
-                    background: #F0F0F0;
-                    font-weight: 500;
-                    font-size: 10px;
-                }
-                .report-table td.text-left {
-                    text-align: left;
-                }
-                .report-footer-info table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 12px;
-                }
-                .report-footer-info td {
-                    padding: 5px 8px;
-                    border: 1px solid #333;
-                }
-                .report-footer-info .label-cell {
-                    background: #F0F0F0;
-                    font-weight: 500;
-                    width: 60%;
-                }
-                .report-footer-info .value-cell {
-                    text-align: right;
-                    width: 40%;
-                }
+                ${getReportPrintStyles()}
                 @media print {
-                    body { padding: 10mm; }
+                    body { padding: 10mm 15mm; }
+                    @page { size: landscape; margin: 10mm; }
                 }
             </style>
         </head>
@@ -627,6 +568,91 @@ function generatePdfFromHtml(doc, data) {
         </html>
     `);
     printWindow.document.close();
+}
+
+function getReportPrintStyles() {
+    return `
+        .report-title-row {
+            margin-bottom: 12px;
+        }
+        .report-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .report-note {
+            font-size: 12px;
+            margin-left: 16px;
+        }
+        .report-header-info {
+            margin-bottom: 16px;
+            padding-left: 40%;
+        }
+        .report-header-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2px;
+            font-size: 13px;
+        }
+        .report-header-label {
+            white-space: nowrap;
+        }
+        .report-header-value {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            padding-left: 8px;
+            padding-bottom: 1px;
+            min-width: 180px;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        .report-table th,
+        .report-table td {
+            border: 1px solid #000;
+            padding: 5px 8px;
+            text-align: center;
+        }
+        .report-table th {
+            font-weight: 500;
+            font-size: 11px;
+            background: transparent;
+        }
+        .report-table td.text-left {
+            text-align: left;
+        }
+        .report-table .col-tilde {
+            border-left: none;
+            border-right: none;
+            padding: 5px 2px;
+        }
+        .report-table .col-duration {
+            min-width: 50px;
+        }
+        .report-footer-info {
+            margin-top: 16px;
+            padding-left: 30%;
+        }
+        .report-footer-row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        .footer-label {
+            min-width: 250px;
+        }
+        .footer-value {
+            text-align: right;
+            min-width: 80px;
+        }
+        .footer-unit {
+            margin-left: 8px;
+            min-width: 30px;
+        }
+    `;
 }
 
 // --- 設定 ---
@@ -761,6 +787,12 @@ function generateId() {
 function formatDateJP(dateStr) {
     const d = new Date(dateStr);
     return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function formatHoursToHM(hours) {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}:${String(m).padStart(2, '0')}`;
 }
 
 function toReiwa(year) {

@@ -513,27 +513,43 @@ body {
     margin-bottom: 16px;
 }
 
+.report-title-row {
+    margin-bottom: 12px;
+}
+
 .report-title {
-    text-align: center;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
-    margin-bottom: 4px;
 }
 
 .report-note {
-    text-align: center;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-light);
-    margin-bottom: 16px;
+    margin-left: 12px;
 }
 
 .report-header-info {
     margin-bottom: 16px;
+    padding-left: 20%;
 }
 
-.report-header-info p {
-    font-size: 14px;
+.report-header-row {
+    display: flex;
+    align-items: center;
     margin-bottom: 4px;
+    font-size: 13px;
+}
+
+.report-header-label {
+    white-space: nowrap;
+}
+
+.report-header-value {
+    flex: 1;
+    border-bottom: 1px solid #333;
+    padding-left: 8px;
+    padding-bottom: 2px;
+    min-width: 120px;
 }
 
 .report-table {
@@ -552,9 +568,9 @@ body {
 }
 
 .report-table th {
-    background: #F0F0F0;
     font-weight: 500;
     font-size: 11px;
+    background: transparent;
 }
 
 .report-table td.text-left {
@@ -563,30 +579,40 @@ body {
     min-width: 80px;
 }
 
-.report-footer-info {
-    margin-top: 16px;
+.report-table .col-tilde {
+    border-left: none;
+    border-right: none;
+    padding: 6px 2px;
 }
 
-.report-footer-info table {
-    width: 100%;
-    border-collapse: collapse;
+.report-table .col-duration {
+    min-width: 45px;
+}
+
+.report-footer-info {
+    margin-top: 20px;
+    padding-left: 20%;
+}
+
+.report-footer-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 6px;
     font-size: 13px;
 }
 
-.report-footer-info td {
-    padding: 6px 8px;
-    border: 1px solid #333;
+.footer-label {
+    min-width: 200px;
 }
 
-.report-footer-info .label-cell {
-    background: #F0F0F0;
-    font-weight: 500;
-    width: 60%;
-}
-
-.report-footer-info .value-cell {
+.footer-value {
     text-align: right;
-    width: 40%;
+    min-width: 60px;
+}
+
+.footer-unit {
+    margin-left: 8px;
+    min-width: 30px;
 }
 
 .report-actions {
