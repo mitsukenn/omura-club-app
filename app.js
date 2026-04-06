@@ -95,6 +95,7 @@ function doLogout() {
     document.getElementById('screen-main').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
     document.getElementById('header-tab-nav').style.display = 'none';
+    document.getElementById('app-header').classList.add('no-tabs');
 }
 
 // --- メイン画面表示 ---
@@ -102,6 +103,7 @@ function showMainScreen() {
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-main').classList.add('active');
     document.getElementById('header-tab-nav').style.display = 'flex';
+    document.getElementById('app-header').classList.remove('no-tabs');
     state.currentMonth = new Date();
     updateMonthLabel();
     renderRecords();
@@ -485,6 +487,7 @@ function generateReport() {
 
     document.getElementById('report-preview').style.display = 'block';
     document.getElementById('report-preview').scrollIntoView({ behavior: 'smooth' });
+    setupShareButton();
 }
 
 // --- PDF出力・共有 ---
@@ -567,18 +570,6 @@ function exportPDF() {
             doc.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 186));
 
             const fileName = getReportFileName();
-
-            // Web Share API対応（スマホ向け）
-            if (navigator.share && navigator.canShare) {
-                const pdfBlob = doc.output('blob');
-                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-                if (navigator.canShare({ files: [file] })) {
-                    // 共有可能 → 共有シートを表示
-                    lastGeneratedPdf = { blob: pdfBlob, fileName: fileName };
-                    document.getElementById('btn-share-pdf').style.display = 'flex';
-                }
-            }
-
             doc.save(fileName);
             document.body.removeChild(iframe);
             showToast('PDFをダウンロードしました');
@@ -590,27 +581,66 @@ function exportPDF() {
     }, 500);
 }
 
-// 共有用のPDFデータを保持
-let lastGeneratedPdf = null;
-
-function sharePDF() {
-    if (!lastGeneratedPdf) {
-        showToast('先にPDFを生成してください');
-        return;
+// スマホ判定＆共有ボタン表示
+function setupShareButton() {
+    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+    if (isMobile && navigator.share) {
+        document.getElementById('btn-share-pdf').style.display = 'flex';
+        document.getElementById('btn-export-pdf').style.display = 'none';
     }
-    const file = new File([lastGeneratedPdf.blob], lastGeneratedPdf.fileName, { type: 'application/pdf' });
-    navigator.share({
-        title: '指導実績報告書',
-        text: '指導実績報告書を送付します。',
-        files: [file]
-    }).then(() => {
-        showToast('共有しました');
-    }).catch(err => {
-        if (err.name !== 'AbortError') {
-            console.error('共有エラー:', err);
-            showToast('共有に失敗しました');
-        }
-    });
+}
+
+function shareReportPDF() {
+    showToast('PDF生成中...');
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;height:800px;border:none;';
+    document.body.appendChild(iframe);
+
+    const htmlContent = buildReportHTML();
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(htmlContent);
+    iframe.contentDocument.close();
+
+    setTimeout(() => {
+        html2canvas(iframe.contentDocument.body, {
+            scale: 2, useCORS: true, backgroundColor: '#ffffff',
+            width: 1100, windowWidth: 1100
+        }).then(canvas => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const pageWidth = 297;
+            const margin = 12;
+            const contentWidth = pageWidth - margin * 2;
+            const contentHeight = (canvas.height * contentWidth) / canvas.width;
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', margin, margin, contentWidth, Math.min(contentHeight, 186));
+
+            const fileName = getReportFileName();
+            const pdfBlob = doc.output('blob');
+            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+            document.body.removeChild(iframe);
+
+            navigator.share({
+                title: '指導実績報告書',
+                text: '指導実績報告書を送付します。',
+                files: [file]
+            }).then(() => {
+                showToast('共有しました');
+            }).catch(err => {
+                if (err.name !== 'AbortError') {
+                    // 共有キャンセル時はフォールバックでダウンロード
+                    doc.save(fileName);
+                    showToast('PDFをダウンロードしました');
+                }
+            });
+        }).catch(err => {
+            console.error('PDF生成エラー:', err);
+            document.body.removeChild(iframe);
+            showToast('PDF生成に失敗しました');
+        });
+    }, 500);
 }
 
 // --- 設定 ---
