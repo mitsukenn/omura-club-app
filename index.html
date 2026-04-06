@@ -13,6 +13,12 @@
     <header class="app-header">
         <h1>大村市育成会クラブ</h1>
         <p class="header-sub">指導記録管理</p>
+        <!-- タブナビゲーション（ログイン後に表示） -->
+        <nav id="header-tab-nav" class="header-tab-nav" style="display:none;">
+            <button class="header-tab-btn active" data-tab="records" onclick="switchTab('records')">活動記録</button>
+            <button class="header-tab-btn" data-tab="report" onclick="switchTab('report')">報告書出力</button>
+            <button class="header-tab-btn" data-tab="settings" onclick="switchTab('settings')">設定</button>
+        </nav>
     </header>
 
     <!-- ログイン画面 -->
@@ -42,12 +48,7 @@
 
     <!-- メイン画面（タブ切り替え） -->
     <div id="screen-main" class="screen">
-        <!-- タブナビゲーション -->
-        <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="records" onclick="switchTab('records')">活動記録</button>
-            <button class="tab-btn" data-tab="report" onclick="switchTab('report')">報告書出力</button>
-            <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">設定</button>
-        </nav>
+        <!-- タブナビゲーション（ヘッダーに移動済み） -->
 
         <!-- 活動記録タブ -->
         <div id="tab-records" class="tab-content active">

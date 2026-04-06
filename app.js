@@ -94,12 +94,14 @@ function doLogout() {
     localStorage.removeItem('omura_club_session');
     document.getElementById('screen-main').classList.remove('active');
     document.getElementById('screen-login').classList.add('active');
+    document.getElementById('header-tab-nav').style.display = 'none';
 }
 
 // --- メイン画面表示 ---
 function showMainScreen() {
     document.getElementById('screen-login').classList.remove('active');
     document.getElementById('screen-main').classList.add('active');
+    document.getElementById('header-tab-nav').style.display = 'flex';
     state.currentMonth = new Date();
     updateMonthLabel();
     renderRecords();
@@ -110,7 +112,7 @@ function showMainScreen() {
 
 // --- タブ切り替え ---
 function switchTab(tabName) {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.header-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
     document.querySelectorAll('.tab-content').forEach(content => {

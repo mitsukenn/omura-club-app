@@ -100,34 +100,37 @@ body {
    タブナビゲーション
    ======================================== */
 
-.tab-nav {
+/* ヘッダー内タブ */
+.header-tab-nav {
     display: flex;
-    background: var(--color-white);
-    border-radius: 0 0 var(--radius) var(--radius);
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
+    margin-top: 10px;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: -16px;
     overflow: hidden;
-    position: sticky;
-    top: 58px;
-    z-index: 90;
 }
 
-.tab-btn {
+.header-tab-btn {
     flex: 1;
-    padding: 12px 8px;
+    padding: 10px 8px;
     border: none;
-    background: transparent;
+    background: rgba(255,255,255,0.15);
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-light);
+    color: rgba(255,255,255,0.7);
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.tab-btn.active {
-    background: var(--color-primary);
+.header-tab-btn.active {
+    background: rgba(255,255,255,0.25);
     color: var(--color-white);
+    font-weight: 700;
+}
+
+.header-tab-btn:active {
+    background: rgba(255,255,255,0.3);
 }
 
 .tab-content {
