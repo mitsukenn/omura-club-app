@@ -478,181 +478,82 @@ function generateReport() {
 
 // --- PDF出力 ---
 function exportPDF() {
-    const { jsPDF } = window.jspdf;
-
     const monthInput = document.getElementById('report-month').value;
     const instructor = document.getElementById('report-instructor').value;
-    const rate = parseInt(document.getElementById('report-rate').value) || 0;
+    const settings = getClubSettings();
     const [year, month] = monthInput.split('-').map(Number);
     const reiwa = year - 2018;
 
-    const records = getRecords();
-    const filtered = records
-        .filter(r => {
-            const d = new Date(r.date);
-            return d.getFullYear() === year && d.getMonth() + 1 === month && r.instructor === instructor;
-        })
-        .sort((a, b) => a.date.localeCompare(b.date));
+    showToast('PDF生成中...');
 
-    const settings = getClubSettings();
-
-    // 時間計算
-    let totalCapped = 0;
-    const dataRows = [];
-    for (let i = 0; i < 7; i++) {
-        if (i < filtered.length) {
-            const r = filtered[i];
-            const capped = Math.min(r.duration, 3.0);
-            totalCapped += capped;
-            dataRows.push([
-                formatDateJP(r.date),
-                r.startTime,
-                '~',
-                r.endTime,
-                capped.toFixed(1),
-                r.location,
-                r.report
-            ]);
-        } else {
-            dataRows.push(['', '', '~', '', '', '', '']);
-        }
-    }
-
-    const payAmount = totalCapped * rate;
-
-    // PDF生成 (A4横)
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-    // フォント設定（日本語対応のため標準フォント使用）
-    // jsPDFの標準フォントでは日本語が表示されないため、
-    // HTML→Canvas→PDF方式を使用
-    generatePdfFromHtml(doc, {
-        reiwa, month, year, instructor, settings, dataRows, totalCapped, rate, payAmount
-    });
-}
-
-function generatePdfFromHtml(doc, data) {
-    const printContent = document.getElementById('report-content').innerHTML;
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="ja">
-        <head>
-            <meta charset="UTF-8">
-            <title>指導実績報告書</title>
-            <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: 'Noto Sans JP', sans-serif;
-                    padding: 15mm 20mm;
-                    font-size: 12px;
-                    color: #000;
-                }
-                ${getReportPrintStyles()}
-                @media print {
-                    body { padding: 10mm 15mm; }
-                    @page { size: landscape; margin: 10mm; }
-                }
-            </style>
-        </head>
-        <body>
-            ${printContent}
-            <script>
-                window.onload = function() {
-                    setTimeout(function() { window.print(); }, 500);
-                };
-            <\/script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-}
-
-function getReportPrintStyles() {
-    return `
-        .report-title-row {
-            margin-bottom: 12px;
-        }
-        .report-title {
-            font-size: 15px;
-            font-weight: 700;
-        }
-        .report-note {
-            font-size: 12px;
-            margin-left: 16px;
-        }
-        .report-header-info {
-            margin-bottom: 16px;
-            padding-left: 40%;
-        }
-        .report-header-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 2px;
-            font-size: 13px;
-        }
-        .report-header-label {
-            white-space: nowrap;
-        }
-        .report-header-value {
-            flex: 1;
-            border-bottom: 1px solid #000;
-            padding-left: 8px;
-            padding-bottom: 1px;
-            min-width: 180px;
-        }
-        .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            margin-bottom: 20px;
-        }
-        .report-table th,
-        .report-table td {
-            border: 1px solid #000;
-            padding: 5px 8px;
-            text-align: center;
-        }
-        .report-table th {
-            font-weight: 500;
-            font-size: 11px;
-            background: transparent;
-        }
-        .report-table td.text-left {
-            text-align: left;
-        }
-        .report-table .col-tilde {
-            border-left: none;
-            border-right: none;
-            padding: 5px 2px;
-        }
-        .report-table .col-duration {
-            min-width: 50px;
-        }
-        .report-footer-info {
-            margin-top: 16px;
-            padding-left: 30%;
-        }
-        .report-footer-row {
-            display: flex;
-            align-items: baseline;
-            margin-bottom: 4px;
-            font-size: 13px;
-        }
-        .footer-label {
-            min-width: 250px;
-        }
-        .footer-value {
-            text-align: right;
-            min-width: 80px;
-        }
-        .footer-unit {
-            margin-left: 8px;
-            min-width: 30px;
-        }
+    // PDF用の非表示レンダリング領域を作成（A4横サイズ相当）
+    const container = document.createElement('div');
+    container.id = 'pdf-render-area';
+    container.style.cssText = `
+        position: fixed; left: -9999px; top: 0;
+        width: 1120px; padding: 40px 50px;
+        background: #fff; font-family: 'Noto Sans JP', sans-serif;
+        font-size: 14px; color: #000;
     `;
+    container.innerHTML = `
+        <style>
+            #pdf-render-area .report-title-row { margin-bottom: 16px; }
+            #pdf-render-area .report-title { font-size: 18px; font-weight: 700; }
+            #pdf-render-area .report-note { font-size: 14px; margin-left: 20px; }
+            #pdf-render-area .report-header-info { margin-bottom: 20px; padding-left: 40%; }
+            #pdf-render-area .report-header-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 15px; }
+            #pdf-render-area .report-header-label { white-space: nowrap; }
+            #pdf-render-area .report-header-value { flex: 1; border-bottom: 1px solid #000; padding-left: 10px; padding-bottom: 2px; min-width: 200px; }
+            #pdf-render-area .report-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 24px; }
+            #pdf-render-area .report-table th,
+            #pdf-render-area .report-table td { border: 1px solid #000; padding: 7px 10px; text-align: center; }
+            #pdf-render-area .report-table th { font-weight: 500; font-size: 13px; }
+            #pdf-render-area .report-table td.text-left { text-align: left; }
+            #pdf-render-area .report-table .col-tilde { border-left: none; border-right: none; padding: 7px 3px; }
+            #pdf-render-area .report-table .col-duration { min-width: 55px; }
+            #pdf-render-area .report-footer-info { margin-top: 20px; padding-left: 30%; }
+            #pdf-render-area .report-footer-row { display: flex; align-items: baseline; margin-bottom: 6px; font-size: 15px; }
+            #pdf-render-area .footer-label { min-width: 300px; }
+            #pdf-render-area .footer-value { text-align: right; min-width: 90px; }
+            #pdf-render-area .footer-unit { margin-left: 10px; min-width: 35px; }
+        </style>
+        ${document.getElementById('report-content').innerHTML}
+    `;
+    document.body.appendChild(container);
+
+    // html2canvas → jsPDF
+    setTimeout(() => {
+        html2canvas(container, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        }).then(canvas => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            const pageWidth = 297;
+            const pageHeight = 210;
+            const margin = 10;
+            const contentWidth = pageWidth - margin * 2;
+            const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', margin, margin, contentWidth, contentHeight);
+
+            // ファイル名生成
+            const clubName = (settings.clubName || 'クラブ').replace(/\s/g, '');
+            const instructorName = instructor.replace(/\s/g, '');
+            const fileName = `指導実績報告書_${clubName}_R${reiwa}年${month}月分_${instructorName}.pdf`;
+
+            doc.save(fileName);
+            document.body.removeChild(container);
+            showToast('PDFをダウンロードしました');
+        }).catch(err => {
+            console.error('PDF生成エラー:', err);
+            document.body.removeChild(container);
+            showToast('PDF生成に失敗しました');
+        });
+    }, 200);
 }
 
 // --- 設定 ---
